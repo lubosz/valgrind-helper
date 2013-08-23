@@ -1,0 +1,13 @@
+#!/bin/sh
+
+make_log() {
+  valgrind --leak-check=full \
+    --show-reachable=yes \
+    --error-limit=no \
+    --gen-suppressions=all \
+    --log-file=valgrind.log $1
+  cat ./valgrind.log | ./parse_valgrind_suppressions.sh > minimal.supp
+}
+
+
+--gen-suppressions=all
