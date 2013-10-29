@@ -1,13 +1,50 @@
 #!/bin/sh
 
-make_log() {
-  valgrind --leak-check=full \
+HELPERDIR=/home/bmonkey/workspace/Python/valgrind-helper
+
+demo-dir() {
+  cd ~/workspace/ges/ges-demo
+}
+
+valgrind-suppressions-everything() {
+  export G_SLICE=always-malloc
+  export G_DEBUG=gc-friendly
+  valgrind \
+    --leak-check=full \
     --show-reachable=yes \
     --error-limit=no \
     --gen-suppressions=all \
-    --log-file=valgrind.log $1
-  cat ./valgrind.log | ./parse_valgrind_suppressions.sh > minimal.supp
+    --log-file=suppressions.log \
+    $1
+  cat ./suppressions.log | $HELPERDIR/log-to-supp.sh > everything.supp
 }
 
+valgrind-suppressions() {
+  export G_SLICE=always-malloc
+  export G_DEBUG=gc-friendly
+  valgrind \
+    --leak-check=full \
+    --show-reachable=yes \
+    --error-limit=no \
+    --gen-suppressions=all \
+    --suppressions=./basic.supp \
+    --log-file=suppressions.log \
+    $1
+  cat ./suppressions.log | $HELPERDIR/log-to-supp.sh > dump.supp
+}
 
---gen-suppressions=all
+valgrind-solist() {
+  grep "\.so" dump.supp | sort | uniq | $HELPERDIR/libs-to-supp.py
+}
+
+valgrind-run () {
+  export G_SLICE=always-malloc
+  export G_DEBUG=gc-friendly
+  valgrind -v \
+    --leak-check=full \
+    --show-reachable=yes \
+    --error-limit=no \
+    --track-origins=yes \
+    --suppressions=./basic.supp $1
+}
+
